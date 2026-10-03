@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Smart School Bus Route Optimization</title>
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f1f6fc;--card:#fff;--ink:#0a2347;--mut:#5a6f8f;--line:#d5e2f3;--pri:#1d5fd0;--navy:#0a2a5e;--soft:#e6f0fe;--ok:#0f8a5f;--warn:#b86e00;--err:#c0392b;--sh:0 2px 10px rgba(10,42,94,.08);box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+:root:not([data-theme="light"]){color-scheme:light dark}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#07142b;--card:#0e2142;--ink:#e6efff;--mut:#93a8cb;--line:#223a66;--pri:#5b9bff;--soft:#13305c;--sh:none}}
+:root[data-theme="dark"]{--bg:#07142b;--card:#0e2142;--ink:#e6efff;--mut:#93a8cb;--line:#223a66;--pri:#5b9bff;--soft:#13305c;--sh:none}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 Figtree,system-ui,sans-serif}
+header{background:var(--navy);color:#fff;padding:18px 24px 0}
+header h1{margin:0;font-size:24px;font-weight:700}header p{margin:2px 0 14px;color:#b7cbee}
+nav{display:flex;gap:4px;flex-wrap:wrap}nav button{background:none;border:0;color:#b7cbee;padding:10px 16px;font:inherit;font-weight:500;cursor:pointer;border-radius:8px 8px 0 0}
+nav button.on{background:var(--bg);color:var(--navy)}@media(prefers-color-scheme:dark){nav button.on{color:#fff}}
+main{max-width:1180px;margin:0 auto;padding:22px 20px 60px}section{display:none}section.on{display:block}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px;box-shadow:var(--sh)}
+.grid{display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(230px,1fr))}.g2{grid-template-columns:repeat(auto-fit,minmax(340px,1fr))}
+.stack>*+*{margin-top:16px}h2{margin:0 0 4px;font-size:20px}h3{margin:0 0 8px;font-size:16px}.mut{color:var(--mut);font-size:13px}
+.big{font-size:30px;font-weight:700;color:var(--pri)}
+button.b,.b{background:var(--pri);color:#fff;border:0;border-radius:10px;padding:10px 18px;font:inherit;font-weight:600;cursor:pointer;transition:filter .15s,transform .1s}
+.b:hover{filter:brightness(1.1)}.b:active{transform:scale(.98)}.b.s{background:var(--soft);color:var(--pri)}.b.lg{padding:15px 34px;font-size:17px}.b:focus-visible,input:focus-visible,select:focus-visible,nav button:focus-visible{outline:3px solid #f2a900;outline-offset:2px}
+input,select{font:inherit;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);width:100%}
+label{font-size:13px;color:var(--mut);display:block;margin-bottom:3px}.row{display:flex;gap:10px;align-items:end;flex-wrap:wrap}.row>*{flex:1;min-width:90px}
+table{width:100%;border-collapse:collapse;font-size:14px}th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line)}th{color:var(--mut);font-weight:600}
+.badge{display:inline-block;padding:2px 10px;border-radius:99px;font-size:12px;font-weight:600;background:var(--soft);color:var(--pri)}
+.badge.ok{background:#d8f3e8;color:#0a6b49}.badge.proc{background:#fff0d1;color:#8a5200}.badge.err{background:#fbdcd8;color:#a22a1d}.badge.demo{background:#ece6ff;color:#5a37b8}
+.steps{display:flex;gap:6px;flex-wrap:wrap}.steps div{flex:1;min-width:140px;padding:12px;border-radius:10px;border:1px solid var(--line);background:var(--card)}
+.steps div.cur{border-color:var(--pri);background:var(--soft)}.steps div.done{border-color:var(--ok)}.steps b{display:block}
+.algo{cursor:pointer;border:2px solid var(--line)}.algo.sel{border-color:var(--pri);background:var(--soft)}.algo ul{padding-left:18px;margin:8px 0 14px}
+svg.g{width:100%;height:auto;background:var(--card);border-radius:12px}.g line{stroke:var(--mut);stroke-width:2}.g line.rt{stroke:var(--pri);stroke-width:4}
+.g .w{font-size:13px;font-weight:600;fill:var(--ink);paint-order:stroke;stroke:var(--card);stroke-width:5}
+.g circle{fill:var(--card);stroke:var(--pri);stroke-width:3;transition:fill .3s}.g .sch{fill:var(--navy);stroke:var(--navy)}.g .vis{fill:#bcd6ff}
+.g .cur{fill:#f2a900;stroke:#b86e00;animation:p 1s ease-in-out infinite}@keyframes p{50%{stroke-width:9}}@media(prefers-reduced-motion:reduce){.g .cur{animation:none}}
+.g text.n{font-weight:700;font-size:15px;text-anchor:middle;fill:var(--ink);pointer-events:none}.g .sch+text{fill:#fff}
+.pipe{display:flex;flex-direction:column;align-items:center;gap:4px}.pipe div{width:min(320px,100%);text-align:center;padding:9px;border:1px solid var(--line);border-radius:10px;font-weight:500;background:var(--card);transition:all .2s}
+.pipe div.act{background:var(--pri);color:#fff;border-color:var(--pri)}.pipe div.done{border-color:var(--ok);color:var(--ok)}.pipe i{color:var(--mut);font-style:normal}
+.flow{display:flex;flex-direction:column;align-items:center}.flow span{padding:6px 18px;border-radius:8px;background:var(--soft);font-weight:600}.flow span.sc{background:var(--navy);color:#fff}.flow i{font-style:normal;color:var(--mut)}
+.bar{display:flex;align-items:center;gap:8px;margin:5px 0;font-size:13px}.bar em{width:64px;font-style:normal}.bar div{height:14px;border-radius:7px;min-width:3px}
+tr.last td{background:var(--soft);font-weight:600}.best{color:var(--ok);font-weight:700}.tw{max-height:360px;overflow:auto}.ov{overflow-x:auto}
+#toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--navy);color:#fff;padding:10px 20px;border-radius:10px;opacity:0;transition:opacity .25s;pointer-events:none}#toast.on{opacity:1}
+code{background:var(--soft);padding:1px 6px;border-radius:5px;font-size:13px}.x{background:none;border:0;color:var(--err);cursor:pointer;font-size:18px}
+</style></head><body>
+<header><h1>Smart School Bus Route Optimization</h1><p>Graph-Based Intelligent Route Planning &amp; Analysis</p>
+<nav id="nav"></nav></header>
+<main>
+<section id="dash" class="stack on">
+ <div class="grid" id="cards"></div>
+ <div class="card"><div class="row"><div><h2>Plan today's routes</h2><p class="mut">Enter stops and road distances, pick an algorithm, then audit and compare the results.</p></div><div style="flex:0"><button class="b lg" onclick="go('plan')">Create Route Plan</button></div></div></div>
+ <div class="card"><h3>Workflow</h3><div class="steps" id="journey"></div></div>
+ <div class="card"><div class="row"><h3 style="flex:2">Connection</h3><div>API Status: <span id="apiB" class="badge"></span></div><div>Processing Status: <span id="procB" class="badge"></span></div></div>
+ <p class="mut" id="modeNote"></p></div>
+</section>
+
+<section id="plan" class="stack">
+ <div class="card"><h2>Route configuration</h2><span class="badge demo" id="sampleB">Sample data</span>
+  <div class="row" style="margin-top:12px"><div><label for="nb">Number of buses</label><input id="nb" type="number" min="1" max="10"></div><div><label for="cap">Bus passenger capacity</label><input id="cap" type="number" min="1"></div><div><label for="sch">School location</label><input id="sch"></div></div></div>
+ <div class="grid g2">
+  <div class="card"><h3>Pickup stops</h3><table><thead><tr><th>Stop</th><th>Students</th><th>Priority</th><th></th></tr></thead><tbody id="stopT"></tbody></table><p><button class="b s" onclick="addStop()">Add stop</button></p></div>
+  <div class="card"><h3>Roads (distance between locations)</h3><div class="row"><div><label for="ea">From</label><select id="ea"></select></div><div><label for="eb">To</label><select id="eb"></select></div><div><label for="ew">Distance</label><input id="ew" type="number" min="1" value="5"></div><div style="flex:0"><button class="b s" onclick="addEdge()">Add road</button></div></div><p id="edgeL"></p></div>
+ </div>
+ <div class="card"><h3>Route chain</h3><p id="chain" style="font-weight:600"></p><div class="row" style="align-items:center"><div style="flex:0"><button class="b" onclick="genGraph()">Generate Graph</button></div><div class="mut" id="gmsg"></div></div></div>
+ <div class="grid g2"><div class="card"><h3>Graph</h3><svg id="gsvg" class="g" viewBox="0 0 600 340" role="img" aria-label="Road graph"></svg></div>
+ <div class="card"><h3>Adjacency list</h3><pre id="adjL" style="font:14px/1.8 ui-monospace,monospace;margin:0;overflow:auto"></pre></div></div>
+</section>
+
+<section id="algo" class="stack">
+ <div class="grid" id="algoCards"></div>
+ <div class="card" style="text-align:center"><button class="b lg" onclick="run()">Run Optimization</button><p class="mut" id="runMsg">Select an algorithm to begin.</p></div>
+ <div class="grid g2"><div class="card"><h3>Processing pipeline</h3><div class="pipe" id="pipe"></div></div>
+ <div class="card"><h3>API endpoints (Flask)</h3><table><tbody>
+ <tr><td><code>POST /api/config</code></td><td>Create route configuration</td></tr><tr><td><code>POST /api/graph</code></td><td>Send graph data</td></tr><tr><td><code>POST /api/run</code></td><td>Run an algorithm</td></tr><tr><td><code>GET /api/results</code></td><td>Retrieve route results</td></tr><tr><td><code>GET /api/audit</code></td><td>Retrieve audit logs</td></tr><tr><td><code>POST /api/compare</code></td><td>Compare algorithms</td></tr></tbody></table>
+ <p class="mut">If no backend answers, the page switches to Demo Mode and runs the same algorithms in the browser on your configuration.</p></div></div>
+</section>
+
+<section id="audit" class="stack">
+ <div class="grid g2">
+  <div class="card"><div class="row"><h2 style="flex:2">Live audit <span class="badge" id="audB">Ready</span></h2><div style="flex:0;white-space:nowrap"><button class="b s" onclick="replay()">Replay</button> <button class="b s" onclick="skip()">Skip to end</button></div></div>
+  <div class="tw"><table><thead><tr><th>Step</th><th>Node</th><th>Action</th><th>Cost</th><th>Status</th></tr></thead><tbody id="audT"></tbody></table></div></div>
+  <div class="card"><svg id="asvg" class="g" viewBox="0 0 600 340" role="img" aria-label="Live route"></svg><table id="live"></table></div>
+ </div>
+ <div class="card" id="out" hidden></div>
+</section>
+
+<section id="cmp" class="stack"><div class="card"><h2>Algorithm comparison</h2><span class="badge" id="cmpB"></span><p class="mut">Dijkstra vs Greedy vs BFS on the current configuration. Objective cost = distance + priority delay penalty.</p><div class="ov" id="cmpT"></div></div><div class="grid" id="cmpC"></div></section>
+</main>
+<div id="toast" role="status"></div>
+<script>
+const $=s=>document.querySelector(s),LET='ABCDEFGHIJKLMNOPQRTUVWXYZ',NAMES={dij:'Dijkstra',greedy:'Greedy',bfs:'BFS'},COL={dij:'#1d5fd0',greedy:'#0891b2',bfs:'#7a8aa6'};
+const S={buses:2,cap:30,school:'School',stops:[{id:'A',n:12,p:3},{id:'B',n:15,p:1},{id:'C',n:10,p:2},{id:'D',n:8,p:3}],
+edges:[{a:'S',b:'A',w:4},{a:'A',b:'B',w:5},{a:'A',b:'C',w:8},{a:'B',b:'D',w:3},{a:'C',b:'D',w:4},{a:'S',b:'C',w:9}],
+algo:null,res:null,steps:[],idx:-1,sample:true,stage:0,api:false,timer:null,proc:'Ready'};
+/* ---- API layer (Flask) ---- */
+const BASE='http://localhost:5000/api';
+async function call(p,m='GET',b){try{const c=new AbortController();setTimeout(()=>c.abort(),1500);const r=await fetch(BASE+p,{method:m,headers:{'Content-Type':'application/json'},body:b?JSON.stringify(b):undefined,signal:c.signal});if(!r.ok)throw 0;return await r.json()}catch(e){return null}}
+const createConfig=()=>call('/config','POST',{buses:S.buses,capacity:S.cap,school:S.school,stops:S.stops});
+const sendGraph=()=>call('/graph','POST',{nodes:['S',...S.stops.map(s=>s.id)],edges:S.edges,adjacency:adj()});
+const runAlgorithm=a=>call('/run','POST',{algorithm:a});
+const getResults=()=>call('/results'),getAudit=()=>call('/audit'),compareAlgorithms=()=>call('/compare','POST',{});
+/* ---- DAA core engine (demo mode) ---- */
+function adj(){const g={S:[]};S.stops.forEach(s=>g[s.id]=[]);S.edges.forEach(e=>{if(g[e.a]&&g[e.b]){g[e.a].push({to:e.b,w:e.w});g[e.b].push({to:e.a,w:e.w})}});return g}
+function dij(g,src){const d={},h={},vis={},steps=[],ord=[];for(const k in g)d[k]=Infinity;d[src]=0;h[src]=0;
+ for(;;){let u=null;for(const k in d)if(!vis[k]&&d[k]<Infinity&&(u===null||d[k]<d[u]))u=k;if(u===null)break;vis[u]=1;ord.push(u);
+  steps.push({node:u,action:u===src?'Start':'Select min-cost node',cost:d[u],status:'Visited',v:1});
+  for(const{to,w}of g[u]){if(vis[to])continue;const nd=d[u]+w;if(nd<d[to]){d[to]=nd;h[to]=h[u]+1;steps.push({node:to,action:`Relax edge ${u}→${to}`,cost:nd,status:'Updated'})}}}
+ return{dist:d,hops:h,steps,ord,visited:ord.length}}
+function bfs(g,src){const d={[src]:0},h={[src]:0},q=[src],steps=[],ord=[];
+ while(q.length){const u=q.shift();ord.push(u);steps.push({node:u,action:u===src?'Start (level 0)':`Dequeue (level ${h[u]})`,cost:d[u],status:'Visited',v:1});
+  for(const{to,w}of g[u])if(!(to in d)){d[to]=d[u]+w;h[to]=h[u]+1;q.push(to);steps.push({node:to,action:`Discover from ${u}`,cost:d[to],status:'Queued'})}}
+ return{dist:d,hops:h,steps,ord,visited:ord.length}}
+function solve(algo){const t0=performance.now(),g=adj(),P={},f=algo==='bfs'?bfs:dij,info=s=>P[s]??=f(g,s),root=info('S'),I=Infinity;
+ let buses=[],steps=[],unserved=[],visited=root.visited,b=[],load=0;
+ if(algo==='greedy'){let rem=S.stops.filter(s=>(root.dist[s.id]??I)<I),cur='S',tot=0;unserved=S.stops.filter(s=>!rem.includes(s));visited=0;
+  steps.push({node:'S',action:'Start at school',cost:0,status:'Visited',v:1});
+  while(rem.length){const fit=rem.filter(s=>s.n<=S.cap-load);
+   if(!fit.length){if(b.length&&buses.length+1<S.buses){buses.push(b);steps.push({node:'S',action:`Bus ${buses.length} full, return to school`,cost:tot,status:'Updated'});b=[];load=0;cur='S';continue}break}
+   let best=null,bs=-I;fit.forEach(s=>{const sc=s.p*5-info(cur).dist[s.id];if(sc>bs){bs=sc;best=s}});
+   tot+=info(cur).dist[best.id];load+=best.n;b.push(best);rem=rem.filter(s=>s!==best);cur=best.id;visited++;
+   steps.push({node:best.id,action:`Pick (score ${bs.toFixed(1)}, ${best.n} students)`,cost:tot,status:'Assigned',v:1})}
+  if(b.length)buses.push(b);unserved=[...unserved,...rem]}
+ else{steps=[...root.steps];S.stops.forEach(s=>{if(!(s.id in root.dist)||root.dist[s.id]===I)unserved.push(s)});
+  root.ord.filter(x=>x!=='S').forEach(id=>{const s=S.stops.find(z=>z.id===id);
+   if(load+s.n>S.cap){if(buses.length+1<S.buses){buses.push(b);b=[];load=0}else{unserved.push(s);return}}b.push(s);load+=s.n});
+  if(b.length)buses.push(b)}
+ steps.push({node:(buses.at(-1)||[]).at(-1)?.id||'S',action:'Route complete',cost:0,status:'Completed',v:1});
+ let dist=0,hops=0,pen=0,served=0;
+ buses.forEach(bus=>{let cur='S',acc=0;[...bus.map(s=>s.id),'S'].forEach(x=>{const i=info(cur);acc+=i.dist[x];hops+=i.hops[x];const s=S.stops.find(z=>z.id===x);if(s)pen+=(4-s.p)*acc*.1;cur=x});served+=bus.reduce((a,s)=>a+s.n,0)});
+ steps[steps.length-1].cost=+dist.toFixed(1);steps[steps.length-1].cost=+(dist=buses.length?dist:0).toFixed(1);
+ return{algo,buses:buses.map(x=>x.map(s=>s.id)),dist,obj:+(dist+pen).toFixed(1),stops:buses.flat().length,served,hops,
+  time:+(performance.now()-t0).toFixed(3),util:buses.length?served/(buses.length*S.cap)*100:0,visited,unserved:unserved.map(s=>s.id),steps}}
+/* ---- UI ---- */
+const nm=id=>id==='S'?S.school:'Stop '+id;
+function toast(t){const e=$('#toast');e.textContent=t;e.classList.add('on');clearTimeout(toast.t);toast.t=setTimeout(()=>e.classList.remove('on'),2200)}
+const TABS=[['dash','Dashboard'],['plan','Route Planner'],['algo','Algorithms'],['audit','Live Audit'],['cmp','Comparison']];
+$('#nav').innerHTML=TABS.map(t=>`<button data-t="${t[0]}">${t[1]}</button>`).join('');
+$('#nav').onclick=e=>{if(e.target.dataset.t)go(e.target.dataset.t)};
+function go(t){document.querySelectorAll('section').forEach(s=>s.classList.toggle('on',s.id===t));document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.t===t));
+ if(t==='cmp'){S.stage=Math.max(S.stage,3);renderCmp()}if(t==='algo'&&S.stage<1)S.stage=1;renderDash()}
+function badge(el,t,k){el.textContent=t;el.className='badge '+(k||'')}
+function setProc(t){S.proc=t;badge($('#procB'),t,{Ready:'',Processing:'proc',Completed:'ok',Error:'err'}[t]);badge($('#audB'),t,{Ready:'',Processing:'proc',Completed:'ok',Error:'err'}[t])}
+function renderDash(){const r=S.res;
+ $('#cards').innerHTML=[['Total Stops',S.stops.length],['Bus Capacity',S.cap+' seats × '+S.buses],['Routes Generated',r?r.buses.length:0],['Total Route Cost',r?r.obj:'—']].map(c=>`<div class="card"><div class="mut">${c[0]}</div><div class="big">${c[1]}</div></div>`).join('');
+ const J=[['Configure','Enter bus capacity, stops, road distances, and student priorities.'],['Execute','Select Dijkstra, Greedy, or BFS and run the computation.'],['Audit','Track every node assignment and algorithm step.'],['Compare','Review performance metrics between algorithms.']];
+ $('#journey').innerHTML=J.map((j,i)=>`<div class="${i<S.stage?'done':i===S.stage?'cur':''}"><b>${i+1}. ${j[0]}</b><span class="mut">${j[1]}</span></div>`).join('');
+ badge($('#apiB'),S.api?'Connected':'Demo mode',S.api?'ok':'demo');
+ $('#modeNote').textContent=S.api?'Flask backend detected. Requests go to '+BASE+'.':'No Flask backend reachable, so Demo Mode runs the algorithms in your browser. The starting configuration is sample data.'}
+function renderPlan(){$('#nb').value=S.buses;$('#cap').value=S.cap;$('#sch').value=S.school;badge($('#sampleB'),S.sample?'Sample data':'Your data',S.sample?'demo':'ok');
+ $('#stopT').innerHTML=S.stops.map((s,i)=>`<tr><td><b>${s.id}</b></td><td><input type="number" min="1" value="${s.n}" aria-label="Students at ${s.id}" onchange="S.stops[${i}].n=+this.value||1;touch()"></td><td><select aria-label="Priority at ${s.id}" onchange="S.stops[${i}].p=+this.value;touch()">${[[3,'High'],[2,'Medium'],[1,'Low']].map(o=>`<option value="${o[0]}" ${o[0]===s.p?'selected':''}>${o[1]}</option>`).join('')}</select></td><td><button class="x" aria-label="Remove stop ${s.id}" onclick="rmStop(${i})">×</button></td></tr>`).join('');
+ const ids=['S',...S.stops.map(s=>s.id)],opt=ids.map(i=>`<option value="${i}">${nm(i)}</option>`).join('');
+ const pa=$('#ea').value,pb=$('#eb').value;$('#ea').innerHTML=opt;$('#eb').innerHTML=opt;if(ids.includes(pa))$('#ea').value=pa;$('#eb').value=ids.includes(pb)?pb:ids[Math.min(1,ids.length-1)];
+ $('#edgeL').innerHTML=S.edges.map((e,i)=>`<span class="badge" style="margin:2px">${e.a==='S'?'School':e.a} – ${e.b==='S'?'School':e.b}: ${e.w} <button class="x" style="font-size:14px" aria-label="Remove road" onclick="S.edges.splice(${i},1);touch()">×</button></span>`).join('')||'<span class="mut">No roads yet.</span>';
+ $('#chain').textContent=S.stops.map(s=>'Stop '+s.id).join(' → ')+' → '+S.school;
+ draw($('#gsvg'));const g=adj();$('#adjL').textContent=Object.keys(g).map(k=>`${k==='S'?'S (School)':k} → ${g[k].map(x=>x.to+'('+x.w+')').join(', ')||'—'}`).join('\n')}
+function touch(){S.sample=false;S.res=null;S.steps=[];S.idx=-1;setProc('Ready');renderPlan();renderDash();renderAudit()}
+$('#nb').onchange=e=>{S.buses=Math.max(1,+e.target.value||1);touch()};$('#cap').onchange=e=>{S.cap=Math.max(1,+e.target.value||1);touch()};$('#sch').onchange=e=>{S.school=e.target.value||'School';touch()};
+function addStop(){const id=[...LET].find(l=>!S.stops.some(s=>s.id===l));if(!id)return toast('Maximum stops reached');S.stops.push({id,n:10,p:2});touch()}
+function rmStop(i){const id=S.stops[i].id;S.stops.splice(i,1);S.edges=S.edges.filter(e=>e.a!==id&&e.b!==id);touch()}
+function addEdge(){const a=$('#ea').value,b=$('#eb').value,w=+$('#ew').value;if(a===b||!(w>0))return toast('Choose two different locations and a distance above 0');
+ const ex=S.edges.find(e=>(e.a===a&&e.b===b)||(e.a===b&&e.b===a));if(ex)ex.w=w;else S.edges.push({a,b,w});touch()}
+async function genGraph(){const g=adj(),iso=S.stops.filter(s=>!dij(g,'S').ord.includes(s.id));
+ if(!S.stops.length){badge($('#procB'),'Error','err');return $('#gmsg').textContent='Add at least one stop.'}
+ await createConfig();await sendGraph();S.stage=Math.max(S.stage,1);renderPlan();renderDash();
+ $('#gmsg').textContent=iso.length?`Graph built. Not reachable from school: ${iso.map(s=>s.id).join(', ')}. Add roads to connect them.`:`Graph built: ${S.stops.length+1} nodes, ${S.edges.length} roads, all stops reachable.`;toast('Graph generated')}
+function pos(){const p={S:[300,170]},n=S.stops.length;S.stops.forEach((s,i)=>{const a=-Math.PI/2+2*Math.PI*i/n;p[s.id]=[300+Math.cos(a)*230,170+Math.sin(a)*125]});return p}
+function draw(svg,o={}){const p=pos(),rt=new Set();(o.route||[]).forEach(b=>{let c='S';[...b,'S'].forEach(x=>{rt.add(c+x);rt.add(x+c);c=x})});
+ let h='';S.edges.forEach(e=>{const a=p[e.a],b=p[e.b];if(!a||!b)return;h+=`<line class="${rt.has(e.a+e.b)?'rt':''}" x1="${a[0]}" y1="${a[1]}" x2="${b[0]}" y2="${b[1]}"/><text class="w" x="${(a[0]+b[0])/2}" y="${(a[1]+b[1])/2+4}" text-anchor="middle">${e.w}</text>`});
+ Object.keys(p).forEach(k=>{const c=k===o.cur?'cur':o.vis&&o.vis.has(k)&&k!=='S'?'vis':k==='S'?'sch':'';h+=`<circle class="${c}" cx="${p[k][0]}" cy="${p[k][1]}" r="${k==='S'?24:20}"/><text class="n" x="${p[k][0]}" y="${p[k][1]+5}">${k}</text>`;if(k==='S')h+=`<text class="n" style="font-size:12px;font-weight:500" x="300" y="212">${S.school}</text>`});svg.innerHTML=h}
+function renderAlgos(){const A=[['dij','Dijkstra','Lowest-cost weighted path',['Uses road distances','Finds minimum-cost paths','Suitable for weighted route optimization']],['greedy','Greedy','Immediate resource allocation',['Makes local decisions','Considers bus capacity','Considers student priorities']],['bfs','BFS','Reachability & minimum hops',['Explores nodes level-by-level','Checks connectivity','Finds minimum-hop paths']]];
+ $('#algoCards').innerHTML=A.map(a=>`<div class="card algo ${S.algo===a[0]?'sel':''}" onclick="pick('${a[0]}')"><h3>${a[1]}</h3><b>${a[2]}</b><ul>${a[3].map(x=>`<li>${x}</li>`).join('')}</ul><button class="b ${S.algo===a[0]?'':'s'}">${S.algo===a[0]?'Selected':'Select Algorithm'}</button></div>`).join('')}
+function pick(a){S.algo=a;renderAlgos();$('#runMsg').textContent=NAMES[a]+' selected. Press Run Optimization.'}
+const PIPE=['React UI','Flask REST API','Input Validation','Graph Construction','Database Query','DAA Core Engine'];
+function pipe(a){$('#pipe').innerHTML=PIPE.map((p,i)=>`<div class="${a<0?'':i<a?'done':i===a?'act':''}">${p}</div>`).join('<i>↓</i>')}
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+async function run(){if(!S.algo){badge($('#procB'),'Error','err');setProc('Error');return $('#runMsg').textContent='Select an algorithm first.'}
+ if(!S.stops.length||!S.edges.length){setProc('Error');return $('#runMsg').textContent='Add at least one stop and one road before running.'}
+ setProc('Processing');$('#runMsg').textContent='Running '+NAMES[S.algo]+'…';
+ for(let i=0;i<PIPE.length;i++){pipe(i);await sleep(160)}
+ const remote=await runAlgorithm(S.algo);S.api=!!remote;S.res=remote&&remote.result?remote.result:solve(S.algo);
+ pipe(PIPE.length);S.steps=S.res.steps;S.stage=Math.max(S.stage,2);setProc('Completed');$('#runMsg').textContent=NAMES[S.algo]+' finished.';
+ renderDash();go('audit');replay()}
+function replay(){clearInterval(S.timer);if(!S.steps.length)return renderAudit();S.idx=0;renderAudit();S.timer=setInterval(()=>{if(S.idx<S.steps.length-1){S.idx++;renderAudit()}else clearInterval(S.timer)},520)}
+function skip(){clearInterval(S.timer);S.idx=S.steps.length-1;renderAudit()}
+function renderAudit(){const st=S.steps,i=S.idx;
+ if(!st.length){$('#audT').innerHTML='<tr><td colspan="5" class="mut">No run yet. Choose an algorithm and press Run Optimization.</td></tr>';$('#live').innerHTML='';draw($('#asvg'));$('#out').hidden=true;return}
+ const sh=st.slice(0,i+1);$('#audT').innerHTML=sh.map((s,k)=>`<tr class="${k===i?'last':''}"><td>${k+1}</td><td>${s.node}</td><td>${s.action}</td><td>${s.cost}</td><td>${s.status}</td></tr>`).join('');
+ const tw=$('.tw');tw.scrollTop=tw.scrollHeight;const vis=new Set(sh.filter(s=>s.v).map(s=>s.node)),fin=i===st.length-1,r=S.res;
+ draw($('#asvg'),{cur:fin?null:st[i].node,vis,route:fin?r.buses:null});
+ const rem=S.stops.filter(s=>!vis.has(s.id)).map(s=>s.id);
+ $('#live').innerHTML=[['Current node',fin?'—':nm(st[i].node)],['Visited',[...vis].filter(x=>x!=='S').join(', ')||'—'],['Remaining',rem.join(', ')||'None'],['Current cost',st[i].cost],['Selected route',fin?r.buses.map((b,k)=>`Bus ${k+1}: ${S.school} → ${b.join(' → ')} → ${S.school}`).join('; '):'Building…'],['Algorithm status',fin?'Completed':'Processing']].map(x=>`<tr><th>${x[0]}</th><td>${x[1]}</td></tr>`).join('');
+ $('#out').hidden=!fin;if(fin)renderOut()}
+function renderOut(){const r=S.res,tot=S.stops.reduce((a,s)=>a+s.n,0);
+ const C=[['Total Distance',r.dist.toFixed(1)],['Total Objective Cost',r.obj],['Number of Stops',`${r.stops} of ${S.stops.length} served`],['Bus Capacity Used',`${r.util.toFixed(0)}% (${r.served} of ${r.buses.length*S.cap} seats)`],['Number of Hops',r.hops],['Processing Time',r.time+' ms']];
+ $('#out').innerHTML=`<h2>Optimized route <span class="badge">${NAMES[r.algo]}</span></h2><div class="grid" style="margin:12px 0">${r.buses.map((b,k)=>`<div class="flow"><b style="margin-bottom:6px">Bus ${k+1}</b><span class="sc">${S.school}</span>${b.map(x=>`<i>↓</i><span>Stop ${x}</span>`).join('')}<i>↓</i><span class="sc">${S.school}</span></div>`).join('')}</div>
+ <div class="grid">${C.map(c=>`<div class="card"><div class="mut">${c[0]}</div><div style="font-size:20px;font-weight:700">${c[1]}</div></div>`).join('')}</div>
+ <p style="margin-top:14px"><button class="b" onclick="$('#det').hidden=!$('#det').hidden">View Details</button> <button class="b s" onclick="resetRun()">Reset</button> <button class="b s" onclick="run()">Run Again</button></p>
+ <div id="det" hidden class="mut">${S.stops.length} stops carry ${tot} students. Objective = distance + 0.1 × Σ(4 − priority) × distance travelled before reaching each stop.${r.unserved.length?` <b style="color:var(--err)">Not served (capacity, bus limit, or no road): ${r.unserved.join(', ')}.</b>`:' Every stop was served.'}</div>`}
+function resetRun(){clearInterval(S.timer);S.res=null;S.steps=[];S.idx=-1;setProc('Ready');pipe(-1);renderAudit();renderDash();toast('Reset')}
+function renderCmp(){const R=['dij','greedy','bfs'].map(solve);badge($('#cmpB'),S.sample?'Sample configuration, computed live':'Computed from your input',S.sample?'demo':'ok');
+ const M=[['obj','Route Cost',0],['dist','Distance',0],['hops','Number of Hops',0],['time','Execution Time (ms)',0],['util','Capacity Utilization (%)',1],['visited','Nodes Visited',0]],fmt=(k,v)=>k==='util'?v.toFixed(0):k==='dist'?v.toFixed(1):v;
+ const best=(k,hi)=>{const v=R.map(r=>r[k]);return hi?Math.max(...v):Math.min(...v)};
+ $('#cmpT').innerHTML=`<table><thead><tr><th>Metric</th>${R.map(r=>`<th>${NAMES[r.algo]}</th>`).join('')}</tr></thead><tbody>${M.map(m=>`<tr><td>${m[1]}</td>${R.map(r=>`<td class="${r[m[0]]===best(m[0],m[2])?'best':''}">${fmt(m[0],r[m[0]])}</td>`).join('')}</tr>`).join('')}<tr><td>Stops served</td>${R.map(r=>`<td>${r.stops} of ${S.stops.length}</td>`).join('')}</tr></tbody></table><p class="mut">Green marks the best value per metric. Execution times vary between runs.</p>`;
+ $('#cmpC').innerHTML=M.map(m=>{const mx=Math.max(...R.map(r=>r[m[0]]))||1;return`<div class="card"><h3>${m[1]}</h3>${R.map(r=>`<div class="bar"><em>${NAMES[r.algo]}</em><div style="width:${Math.max(r[m[0]]/mx*70,1)}%;background:${COL[r.algo]}"></div><span>${fmt(m[0],r[m[0]])}</span></div>`).join('')}</div>`}).join('')}
+(async()=>{setProc('Ready');renderPlan();renderAlgos();pipe(-1);renderAudit();go('dash');const h=await call('/health');S.api=!!h;renderDash()})();
+</script></body></html>
